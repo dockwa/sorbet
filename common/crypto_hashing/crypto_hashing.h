@@ -3,11 +3,7 @@
 
 #include "common/common.h"
 extern "C" {
-#ifndef EMSCRIPTEN
-#include "blake2.h"
-#else
 #include "ref/blake2.h"
-#endif
 };
 
 namespace sorbet::crypto_hashing {
@@ -15,12 +11,8 @@ inline std::array<uint8_t, 64> hash64(std::string_view data) {
     static_assert(BLAKE2B_OUTBYTES == 64);
     std::array<uint8_t, 64> res;
 
-#ifndef EMSCRIPTEN
-    int err = blake2b(&res[0], data.begin(), nullptr, std::size(res), data.size(), 0);
-#else
-    // it has different order of arguments \facepalm
     int err = blake2b(&res[0], std::size(res), data.begin(), data.size(), nullptr, 0);
-#endif
+
     ENFORCE(err == 0);
     return res;
 };

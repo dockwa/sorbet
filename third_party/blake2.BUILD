@@ -1,7 +1,3 @@
-# note: this isn't the blake2 used in prod builds
-# this one is only used in webasm mode
-# prod builds use libb2
-
 cc_library(
     name = "com_github_blake2_blake2",
     srcs = [
