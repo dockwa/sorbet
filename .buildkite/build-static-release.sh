@@ -24,7 +24,7 @@ fi
 
 echo will run with $CONFIG_OPTS
 
-./bazel build //main:sorbet --strip=always $CONFIG_OPTS
+./bazel build //main:sorbet --strip=always $CONFIG_OPTS --toolchain_resolution_debug=@bazel_tools//tools/cpp:toolchain_type
 
 mkdir gems/sorbet-static/libexec/
 cp bazel-bin/main/sorbet gems/sorbet-static/libexec/
