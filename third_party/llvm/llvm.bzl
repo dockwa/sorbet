@@ -314,7 +314,7 @@ llvm_all_cmake_vars = select({
     "@com_stripe_ruby_typer//tools/config:linux": cmake_var_string(
         _dict_add(
             cmake_vars,
-            llvm_target_cmake_vars("X86", "x86_64-unknown-linux_gnu"),
+            llvm_target_cmake_vars("AARCH64", "aarch64-unknown-linux_gnu"),
             posix_cmake_vars,
             linux_cmake_vars,
         ),
