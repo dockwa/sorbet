@@ -95,16 +95,8 @@ build:release-debug-common --config=skipslowenforce
 build:release-linux --linkopt=-Wl,-z,relro,-z,now
 build:release-linux --config=lto-linux --config=release-common
 
-# This is to turn on vector instructions where available.
-# We used to do this unconditionally, but Rosetta 2 doesn't translate all vector instructions well.
-#
-# If we ever start making universal x86-64 + aarch64 binaries for macOS, we
-# could think about re-enabling the vector instructions for x86-64.
-#
-# At Stripe: developer laptops run skylake, devboxes run skylake-avx512
-# however some AWS instances in our fleet still run Sandy Bridge (Skylake predecessor), as of 2018.
-build:release-linux           --copt=-march=sandybridge
-build:release-sanitized-linux --copt=-march=sandybridge
+build:release-linux           --copt=-mcpu=generic
+build:release-sanitized-linux --copt=-mcpu=generic
 
 build:release-mac --config=release-common
 
