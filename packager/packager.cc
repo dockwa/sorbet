@@ -21,6 +21,7 @@ namespace {
 
 constexpr string_view PACKAGE_FILE_NAME = "__package.rb"sv;
 constexpr core::NameRef TEST_NAME = core::Names::Constants::Test();
+constexpr core::NameRef CRITIC_NAME = core::Names::Constants::Critic();
 
 bool isTestFile(const core::GlobalState &gs, core::File &file) {
     return absl::EndsWith(file.path(), ".test.rb") || absl::StrContains(gs.getPrintablePath(file.path()), "/test/");
@@ -237,7 +238,7 @@ ast::ExpressionPtr prependPackageScope(ast::ExpressionPtr scope, core::NameRef m
         lastConstLit = constLit;
     }
     core::NameRef registryName = core::Names::Constants::PackageRegistry();
-    if (lastConstLit->cnst == TEST_NAME) {
+    if (lastConstLit->cnst == TEST_NAME || lastConstLit->cnst == CRITIC_NAME) {
         registryName = core::Names::Constants::PackageTests();
     }
     lastConstLit->scope = name2Expr(mangledName, name2Expr(registryName));
@@ -377,6 +378,9 @@ private:
 
     const vector<core::NameRef> &requiredNamespace() const {
         if (isTestFile) {
+            if (pkg.name.fullName.parts[0] == CRITIC_NAME) {
+                return pkg.name.fullName.parts;
+            }
             return pkg.name.fullTestPkgName.parts;
         } else {
             return pkg.name.fullName.parts;
@@ -433,10 +437,10 @@ struct PackageInfoFinder {
             if (auto target = verifyConstant(ctx, core::Names::export_for_test(), send.args[0])) {
                 auto fqn = getFullyQualifiedName(ctx, target);
                 ENFORCE(fqn.parts.size() > 0);
-                if (fqn.parts[0] == TEST_NAME) {
+                if (fqn.parts[0] == TEST_NAME || fqn.parts[0] == CRITIC_NAME) {
                     if (auto e = ctx.beginError(target->loc, core::errors::Packager::InvalidExportForTest)) {
                         e.setHeader("Packages may not {} names in the `{}::` namespace", send.fun.toString(ctx),
-                                    TEST_NAME.show(ctx));
+                                    fqn.parts[0].show(ctx));
                     }
                 } else {
                     exported.emplace_back(move(fqn), ExportType::PrivateTest);
@@ -725,7 +729,7 @@ public:
         for (const auto &exp : pkg.exports) {
             const auto &parts = exp.parts();
             ENFORCE(parts.size() > 0);
-            if (parts[0] != TEST_NAME) { // Only add imports for non-test
+            if (parts[0] != TEST_NAME && parts[0] != CRITIC_NAME) { // Only add imports for non-test
                 auto loc = exp.fqn.loc.offsets();
                 addImport(pkg, loc, exp.fqn, ImportType::Test);
             }
@@ -769,7 +773,7 @@ private:
         });
         for (auto const &[nameRef, child] : childPairs) {
             // Ignore the entire `Test::*` part of import tree if we are not in a test context.
-            if (moduleType != ImportType::Test && parts.empty() && nameRef == TEST_NAME) {
+            if (moduleType != ImportType::Test && parts.empty() && (nameRef == TEST_NAME || nameRef == CRITIC_NAME)) {
                 continue;
             }
             parts.emplace_back(nameRef);
