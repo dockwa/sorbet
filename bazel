@@ -52,23 +52,26 @@ echo >&2 "No cached Bazel v$BAZEL_VERSION found, installing..."
 kernel_name="$(uname -s | tr 'A-Z' 'a-z')"
 processor_name="$(uname -m)"
 
-bazel_installer_platform="${kernel_name}-${processor_name}"
-case "$bazel_installer_platform" in
+bazel_platform="${kernel_name}-${processor_name}"
+case "$bazel_platform" in
   linux-x86_64) ;;
+  linux-aarch64)
+    bazel_platform="linux-arm64"
+    ;;
   darwin-x86_64) ;;
   darwin-arm64)
     # Pseudo Apple Silicon support by forcing x86_64 (Rosetta) for now
-    bazel_installer_platform="darwin-x86_64"
+    bazel_platform="darwin-x86_64"
     ;;
   *)
-    echo >&2 "Building on $bazel_installer_platform is not implemented"
+    echo >&2 "Building on $bazel_platform is not implemented"
     exit 1
     ;;
 esac
 
-bazel_installer_platform_var="$(echo "$bazel_installer_platform" | tr 'a-z-' 'A-Z_')"
-bazel_installer_sha_regex="BAZEL_INSTALLER_VERSION_${bazel_installer_platform_var}_SHA = \"([^\"]+)\""
-if [[ $workspace_contents =~ $bazel_installer_sha_regex ]]; then
+bazel_platform_var="$(echo "$bazel_platform" | tr 'a-z-' 'A-Z_')"
+bazel_sha_regex="BAZEL_VERSION_${bazel_platform_var}_SHA = \"([^\"]+)\""
+if [[ $workspace_contents =~ $bazel_sha_regex ]]; then
   export expected_sha="${BASH_REMATCH[1]}"
 else
   echo >&2 "$0: Failed to extract Bazel version from WORKSPACE"
@@ -84,13 +87,13 @@ mkdir -p "$BUILD_DIR"
   cd "$BUILD_DIR"
   echo "$PWD"
 
-  installer_name="bazel-${BAZEL_VERSION}-installer-${bazel_installer_platform}.sh"
+  name="bazel-${BAZEL_VERSION}-${bazel_platform}"
   BAZEL_REMOTE_SOURCE="${BAZEL_REMOTE_SOURCE:-https://github.com/bazelbuild/bazel/releases/download}"
-  BAZEL_INSTALLER_PATH="${BAZEL_INSTALLER_PATH:-$BAZEL_REMOTE_SOURCE/${BAZEL_VERSION}/$installer_name}"
+  BAZEL_PATH="${BAZEL_PATH:-$BAZEL_REMOTE_SOURCE/${BAZEL_VERSION}/$name}"
 
-  curl -O -L "$BAZEL_INSTALLER_PATH"
+  curl -O -L "$BAZEL_PATH"
 
-  actual_sha="$(shasum -a 256 "$installer_name" | awk '{print $1}')"
+  actual_sha="$(shasum -a 256 "$name" | awk '{print $1}')"
   if [ "$actual_sha" != "$expected_sha" ]; then
     echo >&2 "Installer checksum mismatch:"
     echo >&2 "  Expected: $expected_sha"
@@ -99,9 +102,10 @@ mkdir -p "$BUILD_DIR"
     exit 1
   fi
 
-  chmod +x "$installer_name"
+  chmod +x "$name"
   mkdir -p "$bazel_bin_loc"
-  "./${installer_name}" --base="${bazel_bin_loc}/${BAZEL_VERSION}" --bin="${bazel_bin_loc}/${BAZEL_VERSION}/bin_t"
+  mkdir -p "$(dirname "$bazel_exec_path")"
+  mv "$name" "$bazel_exec_path"
 )
 rm -rf "$BUILD_DIR"
 
