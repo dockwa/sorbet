@@ -2,6 +2,9 @@
 
 set -euo pipefail
 
+echo "--- setup :ruby:"
+eval "$(rbenv init -)"
+
 export JOB_NAME=build-static-release
 source .buildkite/tools/setup-bazel.sh
 
@@ -73,7 +76,7 @@ trap 'rbenv exec gem uninstall --all --executables --ignore-dependencies sorbet 
 if [[ "mac" == "$platform" ]]; then
   rbenv exec gem install ../../gems/sorbet-static/sorbet-static-*-universal-darwin-18.gem
 else
-  rbenv exec gem install ../../gems/sorbet-static/sorbet-static-*-x86_64-linux.gem
+  rbenv exec gem install "../../gems/sorbet-static/sorbet-static-*-$(uname -m)-linux.gem"
 fi
 rbenv exec gem install sorbet-*.gem
 
