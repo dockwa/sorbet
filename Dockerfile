@@ -5,10 +5,13 @@ FROM ubuntu:focal
 
 ENV DEBIAN_FRONTEND=noninteractive
 
-# perl for shasum(1), libtinfo* due to some transient dependency in C++ land,
-# unzip and curl for bazel's sake, the rest copy-pasta and maybe not necessary
-# anymore
-RUN apt update && apt install -y build-essential curl perl unzip python autoconf libffi-dev libgmp-dev libtinfo5 libtinfo-dev python python3 git
+# - perl for shasum(1)
+# - libtinfo* due to some transient dependency in C++ land
+# - unzip and curl for bazel's sake
+# - git for rbenv/installer's sake
+# - libssl-dev libreadline-dev zlib1g-dev to build rubies via rbenv
+# - the rest copy-pasta and I don't entirely remember
+RUN apt update && apt install -y build-essential curl perl unzip python autoconf libffi-dev libgmp-dev libtinfo5 libtinfo-dev python python3 git libssl-dev libreadline-dev zlib1g-dev
 
 # I hate curl|bash but sorbet's packaging scripts expect rbenv and the version
 # packaged in focal doesn't know about 2.6.3+ rubies
