@@ -7,9 +7,11 @@ if [ "${PUBLISH_TO_RUBYGEMS:-}" == "" ]; then
   exit 0
 fi
 
-git_commit_count=$(git rev-list --count HEAD)
-prefix="0.5"
-release_version="$prefix.${git_commit_count}"
+# dockwa specific: we have a patchlist that sits atop whatever tag we've most
+# recently rebased on. find that tag and use its version number rather than the
+# "count the number of commits" approach upstream uses (which leads to version
+# mismatches and drift, rapidly)
+release_version=$(git describe --tags | cut -d. -f1-3)
 
 echo "--- Dowloading artifacts"
 rm -rf release
