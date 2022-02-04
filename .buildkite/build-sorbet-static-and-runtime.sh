@@ -15,8 +15,11 @@ for runtime_version in "${runtime_versions[@]}"; do
 done
 
 echo "--- build"
-git_commit_count=$(git rev-list --count HEAD)
-release_version="0.5.${git_commit_count}"
+# dockwa specific: we have a patchlist that sits atop whatever tag we've most
+# recently rebased on. find that tag and use its version number rather than the
+# "count the number of commits" approach upstream uses (which leads to version
+# mismatches and drift, rapidly)
+release_version=$(git describe --tags | cut -d. -f1-3)
 sed -i.bak "s/0\\.0\\.0/${release_version}/" sorbet-static-and-runtime.gemspec
 gem build sorbet-static-and-runtime.gemspec
 
