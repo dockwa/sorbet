@@ -19,6 +19,29 @@ RUN curl -fsSL https://github.com/rbenv/rbenv-installer/raw/HEAD/bin/rbenv-insta
 RUN echo 'eval "$(rbenv init -)"' >> ~/.bashrc
 ENV PATH="~/.rbenv/bin:${PATH}"
 
+# upstream's bazel wrapper will pull the 149MB bazel tarball from upstream
+# **every single time** if it's not already cached, which in whatever the first
+# Docker layer that calls bazel is, it will never be. this is both a ridiculous
+# waste of bandwidth (hi, I'm Josh, I have a metered LTE connection out here in
+# the woods!) and of time, so we'll force this to be cached as a separate
+# Docker layer in the event that build-sorbet-runtime.sh fails (which it
+# extremely often does for seemingly-random initialization reasons,
+# particularly for arm64 - see copy-pasted traceback below)
+#
+# #13 68.19 ERROR: Traceback (most recent call last):
+# #13 68.19 	File "/main/BUILD", line 1, column 1, in <toplevel>
+# #13 68.19 		config_setting(
+# #13 68.19 Error: null variable 'config_setting' is referenced before assignment.
+# #13 68.31 ERROR: Skipping '//main:sorbet': no such target '//main:sorbet': target 'sorbet' not declared in package 'main' defined by /main/BUILD
+# #13 68.32 WARNING: Target pattern parsing failed.
+# #13 68.33 ERROR: no such target '//main:sorbet': target 'sorbet' not declared in package 'main' defined by /main/BUILD
+COPY ./bazel /bazel
+COPY ./WORKSPACE /WORKSPACE
+# this will probably fail because, well, there's no actual BUILD file, so just
+# ignore the failures - if the actual download of bazel failed, we'll learn
+# about it in later steps anyway
+RUN ./bazel || true
+
 COPY . .
 
 # these emulate upstream's flow in
