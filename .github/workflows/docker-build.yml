@@ -14,8 +14,8 @@ name: docker-build
 
 on:
   push:
-    tags:
-      - '*'
+    branches:
+      - master
 
 jobs:
   sorbet:

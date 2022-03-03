@@ -4,6 +4,26 @@
 
 # Sorbet
 
+> Dockwa developers: keep `master` rebased off the git tag relating to the
+> Sorbet version [on RubyGems](https://rubygems.org/gems/sorbet) you wish to
+> target, and **always** push the tags to this repo as well! For example:
+>
+> ```
+> git remote add upstream git@github.com:sorbet/sorbet
+> # safe to ignore "error: remote upstream already exists"
+> git fetch --all
+> # this is the last version that cleanly rebases; upstream is working on arm64
+> # support now so it's unlikely we'll be doing much to update this fork unless
+> # we decide to change sorbet functionality. hopefully this is a path towards
+> # the deletion of this repo entirely!
+> git rebase -i 0.5.9626.20220209103517-8d8bab8bc
+> git push --tags # MUST be done first or CI will fail to detect the correct version!
+> git push --force-with-lease
+> ```
+>
+> More safety measures may be added later, but for now, some vigilance is
+> required.
+
 This repository contains Sorbet, a fast, powerful type checker designed for Ruby.
 It aims to be easy to add to existing codebases with gradual types, and fast to
 respond with errors and suggestions.
